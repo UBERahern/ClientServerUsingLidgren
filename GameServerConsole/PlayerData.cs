@@ -10,14 +10,16 @@ namespace GameServerConsole
     {
         public string header = string.Empty;
         public string imageName = string.Empty;
+        public string gamerTag = string.Empty;
         public string playerID;
         public float X;
         public float Y;
 
-        public PlayerData(string messageHeader, string ImgName, string id, float x, float y)
+        public PlayerData(string messageHeader, string GamerTag, string ImgName, string id, float x, float y)
         {
             header = messageHeader;
             playerID = id;
+            gamerTag = GamerTag;
             imageName = ImgName;
             X = x;
             Y = y;

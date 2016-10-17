@@ -13,7 +13,7 @@ namespace GameServerConsole
     {
         static NetPeerConfiguration config = new NetPeerConfiguration("myGame")
         {
-            Port = 12345
+            Port = 12346
         };
         static NetServer server;
         static List<PlayerData> Players = new List<PlayerData>();
@@ -104,7 +104,7 @@ namespace GameServerConsole
                     // send the message to all clients that players are joined
                     foreach (PlayerData player in Players)
                     {
-                        PlayerData joined = new PlayerData("Joined",player.imageName, player.playerID, player.X, player.Y);
+                        PlayerData joined = new PlayerData("Joined",player.gamerTag,player.imageName, player.playerID, player.X, player.Y);
                         string json = JsonConvert.SerializeObject(joined);
                         //
                         NetOutgoingMessage JoinedMessage = server.CreateMessage();

@@ -18,13 +18,16 @@ namespace LingrenGame
     {
         GraphicsDeviceManager graphics;
         SpriteBatch spriteBatch;
-                
+
         private NetPeerConfiguration ClientConfig;
         private NetClient client;
         private string InGameMessage = string.Empty;
         private SpriteFont font;
         GamePlayer thisPlayer;
         List<GamePlayer> OtherPlayers = new List<GamePlayer>();
+
+        FadeTextManager fadeTxtMgr;
+
         Dictionary<string, Texture2D> playerTextures = new Dictionary<string, Texture2D>();
 
         public Game1()
@@ -42,18 +45,18 @@ namespace LingrenGame
         protected override void Initialize()
         {
             // TODO: Add your initialization logic here
-        
+
             ClientConfig = new NetPeerConfiguration("myGame");
             //for the client
             ClientConfig.EnableMessageType(NetIncomingMessageType.DiscoveryResponse);
             client = new NetClient(ClientConfig);
             client.Start();
+            IsMouseVisible = true;
             InGameMessage = "This Client has a unique id of " + client.UniqueIdentifier.ToString();
             // Note Named parameters for more readable code
             //client.Connect(host: "127.0.0.1", port: 12345);
             //search in local network at port 50001
-            client.DiscoverLocalPeers(12345);
-            
+            client.DiscoverLocalPeers(12346);
             base.Initialize();
         }
 
@@ -66,9 +69,14 @@ namespace LingrenGame
             // Create a new SpriteBatch, which can be used to draw textures.
             spriteBatch = new SpriteBatch(GraphicsDevice);
             font = Content.Load<SpriteFont>("GameFont");
+            this.Services.AddService(font);
+            this.Services.AddService(spriteBatch);
 
-            
-            playerTextures =  Loader.ContentLoad<Texture2D>(Content, @".\PlayerImages\");
+            fadeTxtMgr = new FadeTextManager(this);
+            //new FadeText(this, Vector2.Zero, "HELLLLOOOOOOOOO!!!");
+
+
+            playerTextures = Loader.ContentLoad<Texture2D>(Content, @".\PlayerImages\");
 
             // TODO: use this.Content to load your game content here
         }
@@ -93,11 +101,11 @@ namespace LingrenGame
             {
                 NetOutgoingMessage sendMsg = client.CreateMessage();
                 PlayerData playerLeaving = thisPlayer.PlayerDataPacket;
-                playerLeaving.header = "leaving";
+                playerLeaving.header = "Leaving";
                 string json = JsonConvert.SerializeObject(playerLeaving);
 
                 Exit();
-                
+
             }
             if (Keyboard.GetState().IsKeyDown(Keys.Enter))
             {
@@ -109,10 +117,44 @@ namespace LingrenGame
 
 
 
+            foreach (var p in OtherPlayers)
+            {
+                p.ChangePosition(p.position);
+            }
+
+            PlayerMovement();
+
+
+
             CheckMessages();
             // TODO: Add your update logic here
 
             base.Update(gameTime);
+        }
+
+        private void PlayerMovement()
+        {
+            if (Keyboard.GetState().IsKeyDown(Keys.A))
+            {
+                thisPlayer.position.X = thisPlayer.Position.X - 1;
+
+            }
+            if (Keyboard.GetState().IsKeyDown(Keys.D))
+            {
+                thisPlayer.position.X = thisPlayer.Position.X + 1;
+
+            }
+            if (Keyboard.GetState().IsKeyDown(Keys.S))
+            {
+                thisPlayer.position.Y = thisPlayer.Position.Y + 1;
+            }
+            if (Keyboard.GetState().IsKeyDown(Keys.W))
+            {
+                thisPlayer.position.Y = thisPlayer.Position.Y - 1;
+            }
+
+
+
         }
 
         /// <summary>
@@ -124,10 +166,19 @@ namespace LingrenGame
             GraphicsDevice.Clear(Color.CornflowerBlue);
             spriteBatch.Begin();
             spriteBatch.DrawString(font, InGameMessage, new Vector2(10, 10), Color.White);
-            if(thisPlayer != null)
-            spriteBatch.Draw(playerTextures[thisPlayer.ImageName], thisPlayer.Position, Color.White);
-            foreach(GamePlayer other in OtherPlayers)
+            if (thisPlayer != null)
+            {
+                spriteBatch.Draw(playerTextures[thisPlayer.ImageName], thisPlayer.Position, Color.White);
+                spriteBatch.DrawString(font, thisPlayer.gamerTag, new Vector2(thisPlayer.Position.X + 8, thisPlayer.Position.Y - 15), Color.White);
+            }
+
+            foreach (GamePlayer other in OtherPlayers)
+            {
                 spriteBatch.Draw(playerTextures[other.ImageName], other.Position, Color.White);
+                spriteBatch.DrawString(font, other.gamerTag, new Vector2(other.Position.X + 8, other.Position.Y - 15), Color.White);
+
+            }
+
             spriteBatch.End();
             // TODO: Add your drawing code here
 
@@ -154,9 +205,10 @@ namespace LingrenGame
                         if (thisPlayer == null)
                         {
                             string ImageName = "Badges_" + Utility.NextRandom(0, playerTextures.Count - 1);
-                            thisPlayer = new GamePlayer(client, Guid.NewGuid(), ImageName,
+                            thisPlayer = new GamePlayer(client, Guid.NewGuid(), "Frank", ImageName,
                                           new Vector2(Utility.NextRandom(100, GraphicsDevice.Viewport.Width - 100),
                                                        Utility.NextRandom(100, GraphicsDevice.Viewport.Height - 100)));
+
 
                         }
 
@@ -174,6 +226,7 @@ namespace LingrenGame
                         // (only received when compiled in DEBUG mode)
                         //InGameMessage = ServerMessage.ReadString();
                         break;
+
 
                         /* .. */
 
@@ -196,10 +249,33 @@ namespace LingrenGame
                 case "Joined":
                     // Add the player to this game as another player
                     string ImageName = "Badges_" + Utility.NextRandom(0, playerTextures.Count - 1);
-                    GamePlayer newPlayer = new GamePlayer(client, otherPlayer.imageName, otherPlayer.playerID, new Vector2(otherPlayer.X, otherPlayer.Y));
+                    GamePlayer newPlayer = new GamePlayer(client, otherPlayer.gamerTag, otherPlayer.imageName, otherPlayer.playerID, new Vector2(otherPlayer.X, otherPlayer.Y));
+                    //Fade out text for joining
+
+                    new FadeText(this, Vector2.Zero, otherPlayer.gamerTag + " has Joined the Game ");
                     OtherPlayers.Add(newPlayer);
 
+
+
+
+
+                    OtherPlayers.Add(newPlayer);
+
+                    //fadeTxtMgr = new FadeText(new Vector2(100,100),newPlayer.PlayerID+" has joined the game");
                     break;
+
+
+                //case "Moved":
+
+                //    for (OtherPlayers.Find(p => p.PlayerID == otherPlayer.playerID))
+
+                //    break;
+                //case "Leaving":
+                //    if(OtherPlayers.PlayerID == otherPlayer.playerID)
+                //    {
+
+                //    }
+                //    break;
                 default:
                     break;
             }
