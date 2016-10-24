@@ -19,6 +19,8 @@ namespace LingrenGame
         GraphicsDeviceManager graphics;
         SpriteBatch spriteBatch;
 
+        Random ran = new Random();
+
         private NetPeerConfiguration ClientConfig;
         private NetClient client;
         private string InGameMessage = string.Empty;
@@ -136,23 +138,25 @@ namespace LingrenGame
         {
             if (Keyboard.GetState().IsKeyDown(Keys.A))
             {
-                thisPlayer.position.X = thisPlayer.Position.X - 1;
+                thisPlayer.Move(new Vector2(-1f, 0));
 
             }
             if (Keyboard.GetState().IsKeyDown(Keys.D))
             {
-                thisPlayer.position.X = thisPlayer.Position.X + 1;
+                thisPlayer.Move(new Vector2(1f, 0));
+
 
             }
             if (Keyboard.GetState().IsKeyDown(Keys.S))
             {
-                thisPlayer.position.Y = thisPlayer.Position.Y + 1;
+                thisPlayer.Move(new Vector2(0, 1f));
+
             }
             if (Keyboard.GetState().IsKeyDown(Keys.W))
             {
-                thisPlayer.position.Y = thisPlayer.Position.Y - 1;
-            }
+                thisPlayer.Move(new Vector2(0, -1f));
 
+            }
 
 
         }
@@ -205,7 +209,7 @@ namespace LingrenGame
                         if (thisPlayer == null)
                         {
                             string ImageName = "Badges_" + Utility.NextRandom(0, playerTextures.Count - 1);
-                            thisPlayer = new GamePlayer(client, Guid.NewGuid(), "Frank", ImageName,
+                            thisPlayer = new GamePlayer(client, Guid.NewGuid(), "Frank" + ran.Next(0, 90000).ToString(), ImageName,
                                           new Vector2(Utility.NextRandom(100, GraphicsDevice.Viewport.Width - 100),
                                                        Utility.NextRandom(100, GraphicsDevice.Viewport.Height - 100)));
 
@@ -262,6 +266,15 @@ namespace LingrenGame
                     OtherPlayers.Add(newPlayer);
 
                     //fadeTxtMgr = new FadeText(new Vector2(100,100),newPlayer.PlayerID+" has joined the game");
+                    break;
+
+                case "Moved_To":
+                    // Move one of the other players
+                    var movedPlayer = OtherPlayers.Find(p => p.PlayerID == otherPlayer.playerID);
+                    if (movedPlayer != null)
+                    {
+                        movedPlayer.Position = new Vector2(otherPlayer.X, otherPlayer.Y);
+                    }
                     break;
 
 

@@ -12,7 +12,7 @@ using Microsoft.Xna.Framework.Graphics;
 
 namespace LingrenGame
 {
-    
+
 
     public class GamePlayer
     {
@@ -25,13 +25,14 @@ namespace LingrenGame
 
         public string ImageName = string.Empty;
 
-        public GamePlayer(NetClient client,string GamerTag,string ImgName, string playerid, Vector2 StartPos)
+        public GamePlayer(NetClient client, string GamerTag, string ImgName, string playerid, Vector2 StartPos)
         {
             // Created as a reult of a joined message
             position = StartPos;
             playerID = playerid;
             ImageName = ImgName;
             gamerTag = GamerTag;
+            _client = client;
 
         }
 
@@ -42,15 +43,12 @@ namespace LingrenGame
             playerID = playerid.ToString();
             ImageName = ImgName;
             gamerTag = GamerTag;
+            _client = client;
 
             // consruct a join player packet and serialise it
-            _playerDataPacket = new PlayerData("Join",gamerTag, ImageName, PlayerID, StartPos.X,StartPos.Y);
-            string json = JsonConvert.SerializeObject(_playerDataPacket);
-            // construct the outgoing message
-            NetOutgoingMessage sendMsg = client.CreateMessage();
-            sendMsg.Write(json);
-            client.SendMessage(sendMsg, NetDeliveryMethod.ReliableOrdered);
+            _playerDataPacket = new PlayerData("Join", gamerTag, ImageName, PlayerID, StartPos.X, StartPos.Y);
 
+            sendMessage(_playerDataPacket);
 
         }
         public PlayerData PlayerDataPacket
@@ -105,6 +103,24 @@ namespace LingrenGame
             {
                 joined = value;
             }
+        }
+
+        public void Move(Vector2 delta)
+        {
+            Position += delta;
+            _playerDataPacket.X = Position.X;
+            _playerDataPacket.Y = Position.Y;
+            _playerDataPacket = new PlayerData("Move", gamerTag, ImageName, PlayerID, Position.X, Position.Y);
+            sendMessage(_playerDataPacket);
+        }
+
+        private void sendMessage(PlayerData _playerDataPacket)
+        {
+            string json = JsonConvert.SerializeObject(_playerDataPacket);
+            // construct the outgoing message
+            NetOutgoingMessage sendMsg = _client.CreateMessage();
+            sendMsg.Write(json);
+            _client.SendMessage(sendMsg, NetDeliveryMethod.ReliableOrdered);
         }
 
         public void ChangePosition(Vector2 newPosition)

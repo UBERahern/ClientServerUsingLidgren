@@ -113,6 +113,19 @@ namespace GameServerConsole
                     }
 
                     break;
+                case "Move":
+                    var movingPlayer = Players.FirstOrDefault(mp => mp.playerID == p.playerID);
+                    if (movingPlayer != null)
+                    {
+                        movingPlayer.X = p.X;
+                        movingPlayer.Y = p.Y;
+                        movingPlayer.header = "Moved_To";
+                        NetOutgoingMessage MovedMessage = server.CreateMessage();
+                        string json = JsonConvert.SerializeObject(movingPlayer);
+                        MovedMessage.Write(json);
+                        server.SendToAll(MovedMessage, NetDeliveryMethod.ReliableOrdered);
+                    }
+                    break;
                 default:
                     break;
             }
